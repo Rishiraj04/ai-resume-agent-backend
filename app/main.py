@@ -1,13 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from app.agent import agent
 
 app = FastAPI()
-
-
-class ResumeRequest(BaseModel):
-    resume_text: str
-    job_description: str
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,15 +15,25 @@ app.add_middleware(
 )
 
 
-@app.post("/analyze_resume/")
+class ResumeRequest(BaseModel):
+    resume_text: str
+    job_description: str
+
+
+@app.get("/")
+def root():
+    return {"message": "AI Resume Agent backend running 🚀"}
+
+
+@app.post("/analyze_resume")
 async def analyze_resume(data: ResumeRequest):
-    prompt = f"""
-    Resume:
-    {data.resume_text}
+    result = agent.run_sync(
+        f"""
+        Resume:
+        {data.resume_text}
 
-    Job Description:
-    {data.job_description}
-    """
-
-    result = agent.run_sync(prompt)
+        Job Description:
+        {data.job_description}
+        """
+    )
     return result.data
